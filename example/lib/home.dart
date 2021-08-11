@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
-import 'package:flutter_rounded_date_picker/src/material_rounded_date_picker_style.dart';
-import 'package:flutter_rounded_date_picker/src/material_rounded_year_picker_style.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -12,6 +10,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   DateTime dateTime;
   Duration duration;
+  int year;
 
   @override
   void initState() {
@@ -50,6 +49,15 @@ class _HomeState extends State<Home> {
                   ),
                   Text(
                     "$duration",
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  Text(
+                    "Year Selected",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 20, color: Colors.grey[600]),
+                  ),
+                  Text(
+                    "$year",
                     style: const TextStyle(fontSize: 20),
                   ),
                 ],
@@ -529,6 +537,28 @@ class _HomeState extends State<Home> {
                     );
                   },
                   label: const Text("Cupertino Rounded Duration Picker"),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Cupertino Year Picker ",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 20),
+                ),
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  onPressed: () async {
+                    CupertinoRoundedYearPicker.show(
+                      context,
+                      initialYear: year != null ? DateTime(year) : DateTime.now(),
+                      minimumYear: DateTime(1970),
+                      maximumYear: DateTime(2100),
+                      fontFamily: "Mali",
+                      onYearChanged: (newYear) {
+                        setState(() => year = newYear.year);
+                      },
+                    );
+                  },
+                  label: const Text("Cupertino Rounded Year Picker"),
                 ),
                 const SizedBox(height: 12),
               ],

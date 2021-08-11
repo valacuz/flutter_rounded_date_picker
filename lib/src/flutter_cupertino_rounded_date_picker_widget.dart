@@ -1061,7 +1061,6 @@ class _CupertinoDatePickerDateState
 // If the maximum width given to the picker is smaller than 330.0, the picker's
 // layout will be broken.
 
-
 /// A countdown timer picker in iOS style.
 ///
 /// This picker shows a countdown duration with hour, minute and second spinners.
@@ -1518,6 +1517,179 @@ class _CupertinoTimerPickerState
           textScaleFactor: 1.0,
         ),
         child: picker,
+      ),
+    );
+  }
+}
+
+// The iOS date picker and timer picker has their width fixed to 330.0 in all
+// modes.
+//
+// If the maximum width given to the picker is greater than 330.0, the leftmost
+// and rightmost column will be extended equally so that the widths match, and
+// the picker is in the center.
+//
+// If the maximum width given to the picker is smaller than 330.0, the picker's
+// layout will be broken.
+
+/// A countdown timer picker in iOS style.
+///
+/// This picker shows a countdown duration with hour, minute and second spinners.
+/// The duration is bound between 0 and 23 hours 59 minutes 59 seconds.
+///
+/// There are several modes of the timer picker listed in [CupertinoTimerPickerMode].
+///
+/// Sizes itself to its parent.
+///
+/// See also:
+///
+///  * [FlutterRoundedCupertinoDatePickerWidget], the class that implements different display modes
+///    of the iOS-style date picker.
+///  * [CupertinoPicker], the class that implements a content agnostic spinner UI.
+class FlutterRoundedCupertinoYearPickerWidget extends StatefulWidget {
+  /// Constructs an iOS style countdown timer picker.
+  ///
+  /// [mode] is one of the modes listed in [CupertinoTimerPickerMode] and
+  /// defaults to [CupertinoTimerPickerMode.hms].
+  ///
+  /// [onTimerDurationChanged] is the callback called when the selected duration
+  /// changes and must not be null.
+  ///
+  /// [initialTimerDuration] defaults to 0 second and is limited from 0 second
+  /// to 23 hours 59 minutes 59 seconds.
+  ///
+  /// [minuteInterval] is the granularity of the minute spinner. Must be a
+  /// positive integer factor of 60.
+  ///
+  /// [secondInterval] is the granularity of the second spinner. Must be a
+  /// positive integer factor of 60.
+  FlutterRoundedCupertinoYearPickerWidget(
+      {required this.initialYear,
+      required this.minimumYear,
+      required this.maximumYear,
+      required this.onYearChanged,
+      this.era,
+      this.background = Colors.white,
+      this.borderRadius = 16,
+      this.fontFamily,
+      this.textColor = Colors.black54});
+
+  /// The initial year of the picker. Defaults to the present year
+  /// The present must conform to the intervals set in [minimumYear] and [maximumYear],
+  final DateTime initialYear;
+
+  /// Minimum year that the picker can be scrolled to
+  final DateTime minimumYear;
+
+  /// Maximum year that the picker can be scrolled to. Null if there's no limit
+  final DateTime maximumYear;
+
+  /// Callback called when the year changes.
+  final ValueChanged<DateTime> onYearChanged;
+
+  /// Era for the picker.
+  final EraMode? era;
+
+  /// Customize
+  final String? fontFamily;
+  final Color textColor;
+  final Color background;
+  final double borderRadius;
+
+  @override
+  State<StatefulWidget> createState() => _CupertinoYearPickerState();
+}
+
+class _CupertinoYearPickerState
+    extends State<FlutterRoundedCupertinoYearPickerWidget> {
+  late int textDirectionFactor;
+  late CupertinoLocalizations localizations;
+
+  // Alignment based on text direction. The variable name is self descriptive,
+  // however, when text direction is rtl, alignment is reversed.
+  Alignment? alignCenterLeft;
+  Alignment? alignCenterRight;
+
+  // The currently selected values of the picker.
+  late int selectedYear;
+
+  @override
+  void initState() {
+    super.initState();
+
+    selectedYear = widget.initialYear.year;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    textDirectionFactor =
+        Directionality.of(context) == TextDirection.ltr ? 1 : -1;
+    localizations = CupertinoLocalizations.of(context);
+
+    alignCenterLeft =
+        textDirectionFactor == 1 ? Alignment.centerLeft : Alignment.centerRight;
+    alignCenterRight =
+        textDirectionFactor == 1 ? Alignment.centerRight : Alignment.centerLeft;
+  }
+
+  Widget _buildYearPicker() {
+    return CupertinoPicker.builder(
+      scrollController: FixedExtentScrollController(initialItem: selectedYear),
+      itemExtent: _kItemExtent,
+      backgroundColor: widget.background,
+      squeeze: _kSqueeze,
+      onSelectedItemChanged: (int index) {
+        setState(() {
+          selectedYear = index;
+          widget.onYearChanged(DateTime(selectedYear));
+        });
+      },
+      itemBuilder: (BuildContext context, int index) {
+        if (index < widget.minimumYear.year || index > widget.maximumYear.year)
+          return null;
+
+        String strYear = localizations.datePickerYear(index);
+        if (widget.era == EraMode.BUDDHIST_YEAR) {
+          strYear = calculateYearEra(widget.era!, index).toString();
+        }
+
+        return Container(
+          alignment: Alignment.center,
+          child: Text(
+            strYear,
+            style: _themeTextStyle(context).copyWith(
+                fontFamily: widget.fontFamily, color: widget.textColor),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // The timer picker can be divided into columns corresponding to hour,
+    // minute, and second. Each column consists of a scrollable and a fixed
+    // label on top of it.
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+          color: widget.background,
+          borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(widget.borderRadius),
+              topRight: Radius.circular(widget.borderRadius))),
+      child: MediaQuery(
+        data: const MediaQueryData(
+          // The native iOS picker's text scaling is fixed, so we will also fix it
+          // as well in our picker.
+          textScaleFactor: 1.0,
+        ),
+        child: Row(
+          children: [
+            Expanded(child: _buildYearPicker()),
+          ],
+        ),
       ),
     );
   }
